@@ -7,6 +7,49 @@ class Validator {
     return this._errors;
   }
 
+  validateNumber(schema, dataToValidate) {
+    if ('enum' in schema) {
+      if (!schema.enum.includes(dataToValidate)) {
+        this.Errors.push('The enum does not support value');
+
+        return false;
+      }
+    }
+    
+
+    if (typeof dataToValidate !== 'number') {
+      this.Errors.push('Type is incorrect');
+
+      return false;
+    }
+    
+    if ('minimum' in schema) {
+      if (schema.minimum <= dataToValidate) {
+        return true;
+      }
+    }
+    
+    if ('maximum' in schema) {
+      if (schema.maximum >= dataToValidate) {
+        return true;
+      }
+    }
+
+    if (dataToValidate < schema.minimum) {
+      this.Errors.push('Value is less than it can be');
+
+      return false;
+    }
+
+    if (dataToValidate > schema.maximum) {
+      this.Errors.push('Value is greater than it can be');
+
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    *
    * @param schema
@@ -15,96 +58,85 @@ class Validator {
    */
   isValid(schema = {}, dataToValidate) {
     if (schema.type === 'number') {
-      // console.log({schema: schema, dataToValidate: dataToValidate})
-      // console.log(schema, dataToValidate);
-      // console.log(schema);
-      // console.log(schema.enum);
+      return this.validateNumber(schema, dataToValidate);
+    }
 
+    // Проверка для строки
+    // Должен проверять тип
+    if (schema.type === 'string') {
 
-      // schema.enum.forEach(function(item){
-      //   console.log(item);
-      //   // this.Errors.push('The enum does not support value');
-      //   }
-      // )
-
-
-      if (typeof dataToValidate !== 'number') {
-        this.Errors.push('Type is incorrect')
+      // Должен добавлять ошибку, если тип неверный
+      if (typeof dataToValidate != 'string') {
+        this.Errors.push('Type is incorrect');
 
         return false;
       }
-      
-      if ('minimum' in schema) {
-        // console.log(schema, dataToValidate)
 
-        if (schema.minimum <= dataToValidate) {
-          return true;
+      // Должен добавлять ошибку, если длина строки меньше минимальной
+      if (schema.minLength != undefined && schema.minLength >= dataToValidate.length) {
+        this.Errors.push('Too short string');
+
+        return false;
+      }
+
+      // Должен добавлять ошибку, если длина строки больше максимальной
+      if (schema.maxLength != undefined && schema.maxLength <=  dataToValidate.length) {
+        this.Errors.push('Too long string');
+
+        return false;
+      }
+
+      // Должен добавлять ошибку, если значение не из перечисленных возможных
+      if ('enum' in schema) {
+        if (!schema.enum.includes(dataToValidate)) {
+          this.Errors.push('The enum does not support value');
+
+          return false;
         }
       }
-      
-      if ('maximum' in schema) {
-        // console.log(schema, dataToValidate)
 
-        if (schema.maximum >= dataToValidate) {
-          return true;
+      /*
+                    Форматы
+        Должен проверять, что строка это email
+        Должен добавлять ошибку, если строка не дата
+        Должен добавлять ошибку, если строка не email
+        Должен проверять, что строка это дата
+      */
+      if('format' in schema) {
+        // debugger
+        const regexpEmail = /[a-zA-Z]*@[a-zA-Z-0-9]*.[a-z]*/;
+        const isEmail = dataToValidate.match(regexpEmail);
+        
+        const regexpDate = /\d{4}-\d{2}-\d{2}$/;
+        const isDate = dataToValidate.match(regexpDate);
+
+        if (schema.format == 'email'){
+          if (!isEmail) {
+            // this.Errors.push('Format of string is not valid');
+            return false;
+          }
+        }
+          
+        if (schema.format == 'date'){
+          if (!isDate) {
+            this.Errors.push('Format of string is not valid');
+            return false;
+          }
         }
       }
-
-      if (dataToValidate < schema.minimum){
-        this.Errors.push('Value is less than it can be')
-
-        return false;
+      // Должен добавлять ошибку, если строка не соответствует переданному регулярному выражению
+      if ('pattern' in schema){
+        const pat = schema.pattern;
+        const isPat = dataToValidate.match(pat);
+        if (!isPat){
+          this.Errors.push('String does not match pattern');
+          
+          return false;
+        }
       }
-
-      if (dataToValidate > schema.maximum){
-        this.Errors.push('Value is greater than it can be')
-
-        return false;
-      }
-      // if (schema.enum.includes(number)){
-      //   return true;
-      // }
-      
-      // if(schema.enum !== undefined){
-      //     // console.log(id + " - ", element);
-      //     if(!schema.enum.includes(number)){
-      //       this.Errors.push('The enum does not support value');
-      //       console.log('Нашли не число');
-      //     }
-      // }
       return true;
     }
 
-    else if(schema.type === 'string') {
-      // console.log({shema:schema, dataToValidate: dataToValidate});
-      // console.log(schema);
-
-      // console.log(schema.format);
-      // if(schema.format){
-      //   if(schema.format === date){
-      //     return true;
-      //   }
-      // }
-      // console.log({dataToValidate:dataToValidate, type:typeof dataToValidate});
-
-      
-      if(schema.format === 'date'){
-        console.log(schema.format);
-        return true;
-      }
-
-      console.log(schema.maxLength);
-      console.log(dataToValidate);
-
-
-      // console.log(schema);
-      // console.log(schema.format);
-      // if(schema.format && schema.format === date){
-      //   return true;
-      // }
-      return true;
-    }
-    this.Errors.push('The enum does not support value');
     return false;
   }
 }
